@@ -1,0 +1,40 @@
+stages:
+- name: Build
+  steps:
+  - runScriptConfig:
+      image: composer:latest
+      shellScript: |-
+        cd src/
+        composer install --optimize-autoloader --no-dev
+        composer dump-autoload -o
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
+        php artisan config:cache
+        php artisan config:clear
+- name: Publish
+  steps:
+  - publishImageConfig:
+      dockerfilePath: ./Dockerfile
+      buildContext: .
+      tag: www-sgm-server:${CICD_EXECUTION_SEQUENCE}
+    env:
+      PLUGIN_DEBUG: "true"
+      PLUGIN_INSECURE: "true"
+- name: Deploy
+  steps:
+  - applyYamlConfig:
+      path: ./deployment.yaml
+branch:
+  include:
+  - master
+notification:
+  recipients:
+  - recipient: rafaelchechi@gmail.com
+    notifier: c-ztc4h:n-gwpds
+  - recipient: tiagolgasparetto@gmail.com
+    notifier: c-ztc4h:n-gwpds
+  condition:
+  - Success
+  - Changed
+  - Failed
